@@ -1,0 +1,224 @@
+document.addEventListener("DOMContentLoaded", function(){
+
+  /* =========================
+     NAVBAR SCROLL
+  ========================= */
+  window.addEventListener("scroll", () => {
+    let nav = document.getElementById("navbar");
+
+    if (nav) {
+      nav.style.background = window.scrollY > 50 
+        ? "rgba(0,0,0,0.8)" 
+        : "rgba(0,0,0,0.5)";
+    }
+  });
+
+  /* =========================
+     MUSIC
+  ========================= */
+  const music = document.getElementById("bg-music");
+  const btn = document.getElementById("music-btn");
+
+  if(btn && music){
+    btn.onclick = () => {
+      music.paused ? music.play() : music.pause();
+    };
+  }
+
+  /* =========================
+     SERVICE CARD
+  ========================= */
+  const cards = document.querySelectorAll(".service-card");
+
+  cards.forEach(card => {
+
+    // ACCORDION
+    card.addEventListener("click", () => {
+      cards.forEach(c => {
+        if(c !== card) c.classList.remove("active");
+      });
+      card.classList.toggle("active");
+
+      // AUTO CENTER (SLIDER)
+      card.scrollIntoView({
+        behavior: "smooth",
+        inline: "center",
+        block: "nearest"
+      });
+    });
+
+    // FIX VIDEO CLICK
+    const iframe = card.querySelector("iframe");
+    if(iframe){
+      iframe.addEventListener("click", (e) => e.stopPropagation());
+    }
+
+    // PARALLAX (RINGAN - NO LAG)
+    card.addEventListener("mousemove", (e) => {
+      const rect = card.getBoundingClientRect();
+
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const rotateX = -(y - rect.height/2) / 30;
+      const rotateY = (x - rect.width/2) / 30;
+
+      card.style.transform = `
+        rotateX(${rotateX}deg)
+        rotateY(${rotateY}deg)
+        scale(1.03)
+      `;
+    });
+
+    card.addEventListener("mouseleave", () => {
+      card.style.transform = "";
+    });
+
+  });
+
+  /* =========================
+     SCROLL ANIMATION (SUPER LIGHT)
+  ========================= */
+  const elements = document.querySelectorAll(".service-card, .schedule-card");
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if(entry.isIntersecting){
+        entry.target.classList.add("show");
+      }
+    });
+  }, {
+    threshold: 0.2
+  });
+
+  elements.forEach(el => observer.observe(el));
+
+});
+
+function showSchedule(type){
+
+  const exportBox =
+  document.getElementById("exportSchedule");
+
+  const importBox =
+  document.getElementById("importSchedule");
+
+  const tabs =
+  document.querySelectorAll(".schedule-tab");
+
+  tabs.forEach(tab => {
+    tab.classList.remove("active");
+  });
+
+  if(type === "export"){
+
+    exportBox.style.display = "block";
+    importBox.style.display = "none";
+
+    tabs[0].classList.add("active");
+
+  }else{
+
+    exportBox.style.display = "block";
+    exportBox.style.display = "none";
+
+    importBox.style.display = "block";
+
+    tabs[1].classList.add("active");
+  }
+}
+
+/* =========================================
+   FREIGHT FILTER SCRIPT
+========================================= */
+
+const searchInput = document.getElementById("searchInput");
+const commodityFilter = document.getElementById("commodityFilter");
+const sortFilter = document.getElementById("sortFilter");
+const resetFilter = document.getElementById("resetFilter");
+
+const cards = document.querySelectorAll(".freight-card");
+const freightGrid = document.querySelector(".freight-grid");
+
+/* FILTER FUNCTION */
+function filterCards(){
+
+  const searchValue = searchInput.value.toLowerCase();
+  const commodityValue = commodityFilter.value;
+  const sortValue = sortFilter.value;
+
+  let visibleCards = [];
+
+  cards.forEach(card => {
+
+    const route = card.dataset.route.toLowerCase();
+    const commodity = card.dataset.commodity;
+    const type = card.dataset.type;
+
+    let show = true;
+
+    /* SEARCH */
+    if(!route.includes(searchValue)){
+      show = false;
+    }
+
+    /* COMMODITY */
+    if(commodityValue !== "all" && commodity !== commodityValue){
+      show = false;
+    }
+
+    /* TYPE */
+    if(sortValue === "air" && type !== "air"){
+      show = false;
+    }
+
+    if(sortValue === "ocean" && type !== "ocean"){
+      show = false;
+    }
+
+    card.style.display = show ? "block" : "none";
+
+    if(show){
+      visibleCards.push(card);
+    }
+
+  });
+
+  /* SORT DAYS */
+  if(sortValue === "fastest"){
+    visibleCards.sort((a,b)=>
+      a.dataset.days - b.dataset.days
+    );
+  }
+
+  if(sortValue === "slowest"){
+    visibleCards.sort((a,b)=>
+      b.dataset.days - a.dataset.days
+    );
+  }
+
+  visibleCards.forEach(card=>{
+    freightGrid.appendChild(card);
+  });
+
+}
+
+/* EVENTS */
+searchInput.addEventListener("keyup", filterCards);
+commodityFilter.addEventListener("change", filterCards);
+sortFilter.addEventListener("change", filterCards);
+
+/* RESET */
+resetFilter.addEventListener("click",()=>{
+
+  searchInput.value = "";
+  commodityFilter.value = "all";
+  sortFilter.value = "default";
+
+  filterCards();
+
+});
+
+/* INIT */
+filterCards();
+
